@@ -16,10 +16,10 @@ public class Star extends Sprite{
 
     public Star(Texture texture,int srcX,int srcY,int srcWidth,int srcHeight){
         super(texture,srcX,srcY,srcWidth,srcHeight);
+        setSize(STAR_WIDTH,STAR_HEIGHT);
         mState = STAR_EXIST;
     }
 
-    @Override
     public void get(){
         mState = STAR_NONE;
         setAlpha(0);
