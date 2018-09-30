@@ -1,8 +1,10 @@
     package jp.techacademy.shohei.yamamoto.jumpactiongame;
 
     import com.badlogic.gdx.Gdx;
+    import com.badlogic.gdx.Preferences;
     import com.badlogic.gdx.ScreenAdapter;
     import com.badlogic.gdx.graphics.GL20;
+    import com.badlogic.gdx.graphics.g2d.BitmapFont;
     import com.badlogic.gdx.graphics.OrthographicCamera;
     import com.badlogic.gdx.graphics.Texture;
     import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -19,7 +21,7 @@
         static final float CAMERA_WIDTH = 10;
         static final float CAMERA_HEIGHT = 15;
         static final float WORLD_WIDTH = 10;
-        static final float WORLD_HEIGHT = 15 * 20; // 20画面分登れば終了
+        static final float WORLD_HEIGHT = 15 * 20;
         static final float GUI_WIDTH = 320;
         static final float GUI_HEIGHT = 480;
 
@@ -44,10 +46,13 @@
         List<Star> mStars;
         Ufo mUfo;
         Player mPlayer;
-
         float mHeightSoFar;
         int mGameState;
         Vector3 mTouchPoint;
+        BitmapFont mFont;
+        int mScore;
+        int mHighScore;
+        Preferences mPrefs;
 
         public GameScreen(JumpActionGame game) {
             mGame = game;
@@ -64,10 +69,10 @@
             mCamera.setToOrtho(false, CAMERA_WIDTH, CAMERA_HEIGHT);
             mViewPort = new FitViewport(CAMERA_WIDTH, CAMERA_HEIGHT, mCamera);
 
-            //GUI用のカメラを設定する
+            // GUI用のカメラを設定する
             mGuiCamera = new OrthographicCamera();
-            mGuiCamera.setToOrtho(false,GUI_WIDTH,GUI_HEIGHT);
-            mGuiViewPort = new FitViewport(GUI_WIDTH,GUI_HEIGHT,mGuiCamera);
+            mGuiCamera.setToOrtho(false, GUI_WIDTH, GUI_HEIGHT);
+            mGuiViewPort = new FitViewport(GUI_WIDTH, GUI_HEIGHT, mGuiCamera);
 
             // メンバ変数の初期化
             mRandom = new Random();
@@ -75,22 +80,31 @@
             mStars = new ArrayList<Star>();
             mGameState = GAME_STATE_READY;
             mTouchPoint = new Vector3();
+            mFont = new BitmapFont(Gdx.files.internal("font.fnt"), Gdx.files.internal("font.png"), false);
+            mFont.getData().setScale(0.8f);
+            mScore = 0;
+            mHighScore = 0;
+
+            // ハイスコアをPreferencesから取得する
+            mPrefs = Gdx.app.getPreferences("jp.techacademy.taro.kirameki.jumpactiongame");
+            mHighScore = mPrefs.getInteger("HIGHSCORE", 0);
 
             createStage();
         }
 
         @Override
         public void render(float delta) {
-            // それぞれの状態をアップデートする
+            // 状態を更新する
             update(delta);
 
+            // 描画する
             Gdx.gl.glClearColor(0, 0, 0, 1);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
             // カメラの中心を超えたらカメラを上に移動させる つまりキャラが画面の上半分には絶対に行かない
-            if (mPlayer.getY() > mCamera.position.y) { // ←追加する
-                mCamera.position.y = mPlayer.getY(); // ←追加する
-            } // ←追加する
+            if (mPlayer.getY() > mCamera.position.y) {
+                mCamera.position.y = mPlayer.getY();
+            }
 
             // カメラの座標をアップデート（計算）し、スプライトの表示に反映させる
             mCamera.update();
@@ -120,13 +134,20 @@
             mPlayer.draw(mGame.batch);
 
             mGame.batch.end();
+
+            // スコア表示
+            mGuiCamera.update();
+            mGame.batch.setProjectionMatrix(mGuiCamera.combined);
+            mGame.batch.begin();
+            mFont.draw(mGame.batch, "HighScore: " + mHighScore, 16, GUI_HEIGHT - 15);
+            mFont.draw(mGame.batch, "Score: " + mScore, 16, GUI_HEIGHT - 35);
+            mGame.batch.end();
         }
 
         @Override
         public void resize(int width, int height) {
             mViewPort.update(width, height);
-            mViewPort.update(width,height);
-            mGuiViewPort.update(width,height);
+            mGuiViewPort.update(width, height);
         }
 
         // ステージを作成する
@@ -183,6 +204,7 @@
                     break;
             }
         }
+
         private void updateReady() {
             if (Gdx.input.justTouched()) {
                 mGameState = GAME_STATE_PLAYING;
@@ -193,7 +215,7 @@
             float accel = 0;
             if (Gdx.input.isTouched()) {
                 mGuiViewPort.unproject(mTouchPoint.set(Gdx.input.getX(), Gdx.input.getY(), 0));
-                Rectangle left = new Rectangle(0, 0, GUI_WIDTH/ 2, GUI_HEIGHT);
+                Rectangle left = new Rectangle(0, 0, GUI_WIDTH / 2, GUI_HEIGHT);
                 Rectangle right = new Rectangle(GUI_WIDTH / 2, 0, GUI_WIDTH / 2, GUI_HEIGHT);
                 if (left.contains(mTouchPoint.x, mTouchPoint.y)) {
                     accel = 5.0f;
@@ -215,51 +237,74 @@
             mPlayer.update(delta, accel);
             mHeightSoFar = Math.max(mPlayer.getY(), mHeightSoFar);
 
-            //当たり判定を行う
+            // 当たり判定を行う
             checkCollision();
+
+            checkGameOver();
         }
+
+        private void checkGameOver() {
+            if (mHeightSoFar - CAMERA_HEIGHT / 1.8 > mPlayer.getY()) {
+                Gdx.app.log("JumpActionGame", "GAMEOVER");
+                mGameState = GAME_STATE_GAMEOVER;
+            }
+        }
+
         private void updateGameOver() {
 
         }
-        private void checkCollision(){
-            //UFO(ゴールとの当たり判定)
-            if(mPlayer.getBoundingRectangle().overlaps(mUfo.getBoundingRectangle())){
+
+        private void checkCollision() {
+            // UFO(ゴールとの当たり判定)
+            if (mPlayer.getBoundingRectangle().overlaps(mUfo.getBoundingRectangle())) {
                 mGameState = GAME_STATE_GAMEOVER;
                 return;
             }
-            //Starとの当たり判定
-            for(int i = 0; i < mStars.size(); i++){
+
+            // Starとの当たり判定
+            for (int i = 0; i < mStars.size(); i++) {
                 Star star = mStars.get(i);
 
-                if(star.mState == Star.STAR_NONE){
+                if (star.mState == Star.STAR_NONE) {
                     continue;
                 }
-                if(mPlayer.getBoundingRectangle().overlaps(star.getBoundingRectangle())){
+
+                if (mPlayer.getBoundingRectangle().overlaps(star.getBoundingRectangle())) {
                     star.get();
+                    mScore++;
+                    if (mScore > mHighScore) {
+                        mHighScore = mScore;
+                        //ハイスコアをPreferenceに保存する
+                        mPrefs.putInteger("HIGHSCORE", mHighScore);
+                        mPrefs.flush();
+                    }
                     break;
                 }
             }
-            //stepとの当たり判定
-            //上昇中はStepとの当たり判定を確認しない
-            if(mPlayer.velocity.y > 0){
+
+            // Stepとの当たり判定
+            // 上昇中はStepとの当たり判定を確認しない
+            if (mPlayer.velocity.y > 0) {
                 return;
             }
-            for(int i = 0;i < mSteps.size(); i++){
+
+            for (int i = 0; i < mSteps.size(); i++) {
                 Step step = mSteps.get(i);
 
-                if(step.mState == Step.STEP_STATE_VANISH){
+                if (step.mState == Step.STEP_STATE_VANISH) {
                     continue;
                 }
-                if(mPlayer.getY() > step.getY()){
-                    if(mPlayer.getBoundingRectangle().overlaps(step.getBoundingRectangle())){
+
+                if (mPlayer.getY() > step.getY()) {
+                    if (mPlayer.getBoundingRectangle().overlaps(step.getBoundingRectangle())) {
                         mPlayer.hitStep();
-                        if(mRandom.nextFloat() > 0.5f){
+                        if (mRandom.nextFloat() > 0.5f) {
                             step.vanish();
                         }
                         break;
                     }
                 }
             }
-        }
 
+        }
     }
