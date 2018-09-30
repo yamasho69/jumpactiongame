@@ -251,7 +251,9 @@
         }
 
         private void updateGameOver() {
-
+            if(Gdx.input.justTouched()){
+             mGame.setScreen(new ResultScreen(mGame,mScore));
+            }
         }
 
         private void checkCollision() {
