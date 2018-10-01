@@ -5,6 +5,7 @@
     import com.badlogic.gdx.ScreenAdapter;
     import com.badlogic.gdx.graphics.GL20;
     import com.badlogic.gdx.graphics.g2d.BitmapFont;
+    import com.badlogic.gdx.audio.Sound;
     import com.badlogic.gdx.graphics.OrthographicCamera;
     import com.badlogic.gdx.graphics.Texture;
     import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -167,6 +168,7 @@
             Texture ufoTexture = new Texture("ufo.png");
             Texture enemyTexture = new Texture("enemy.png");
 
+
             // StepとStarとenemyをゴールの高さまで配置していく
             float y = 0;
 
@@ -185,9 +187,9 @@
                     mStars.add(star);
                 }
 
-                if (mRandom.nextFloat() > 0.9f) {
-                    Enemy enemy = new Enemy(type,enemyTexture,0,0,72,72);
-                    enemy.setPosition(enemy.getX() + mRandom.nextFloat(), enemy.getY() + enemy.ENEMY_HEIGHT + mRandom.nextFloat() * 3);
+                if (mRandom.nextFloat() > 0.01f) {
+                    Enemy enemy = new Enemy(enemyTexture,0,0,120,120);
+                    enemy.setPosition(step.getX() + mRandom.nextFloat()+2.5f, step.getY() + Enemy.ENEMY_HEIGHT + mRandom.nextFloat() * 3);
                     mEnemy.add(enemy);
                 }
 
@@ -281,6 +283,8 @@
             for(int i = 0; i < mEnemy.size(); i++){
                 Enemy enemy = mEnemy.get(i);
             if (mPlayer.getBoundingRectangle().overlaps(enemy.getBoundingRectangle())) {
+                Sound sound = Gdx.audio.newSound(Gdx.files.internal("puyon1.mp3"));
+                sound.play(1.0f);
                 mGameState = GAME_STATE_GAMEOVER;
                 return;
             }
