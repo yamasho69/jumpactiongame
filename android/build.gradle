@@ -133,4 +133,7 @@ idea {
             }
         }
     }
+    dependencies{
+        compile'com.google.android.gms:play-services:6.+'
+    }
 }

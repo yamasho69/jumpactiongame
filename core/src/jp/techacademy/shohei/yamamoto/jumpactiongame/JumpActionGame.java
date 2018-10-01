@@ -6,6 +6,12 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 public class JumpActionGame extends Game {
 	// publicにして外からアクセスできるようにする
 	public SpriteBatch batch;
+	public ActivityRequestHandler mReauestHandler;
+
+	public JumpActionGame(ActivityRequestHandler requestHandler){
+		super();
+		mReauestHandler = requestHandler;
+	}
 
 	@Override
 	public void create () {

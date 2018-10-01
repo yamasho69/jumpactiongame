@@ -44,6 +44,7 @@
         Random mRandom;
         List<Step> mSteps;
         List<Star> mStars;
+        List<Enemy> mEnemy;
         Ufo mUfo;
         Player mPlayer;
         float mHeightSoFar;
@@ -78,6 +79,7 @@
             mRandom = new Random();
             mSteps = new ArrayList<Step>();
             mStars = new ArrayList<Star>();
+            mEnemy = new ArrayList<Enemy>();
             mGameState = GAME_STATE_READY;
             mTouchPoint = new Vector3();
             mFont = new BitmapFont(Gdx.files.internal("font.fnt"), Gdx.files.internal("font.png"), false);
@@ -127,6 +129,11 @@
                 mStars.get(i).draw(mGame.batch);
             }
 
+            //Enemy
+            for (int i = 0; i < mEnemy.size(); i++) {
+                mEnemy.get(i).draw(mGame.batch);
+            }
+
             // UFO
             mUfo.draw(mGame.batch);
 
@@ -158,8 +165,9 @@
             Texture starTexture = new Texture("star.png");
             Texture playerTexture = new Texture("uma.png");
             Texture ufoTexture = new Texture("ufo.png");
+            Texture enemyTexture = new Texture("enemy.png");
 
-            // StepとStarをゴールの高さまで配置していく
+            // StepとStarとenemyをゴールの高さまで配置していく
             float y = 0;
 
             float maxJumpHeight = Player.PLAYER_JUMP_VELOCITY * Player.PLAYER_JUMP_VELOCITY / (2 * -GRAVITY);
@@ -175,6 +183,12 @@
                     Star star = new Star(starTexture, 0, 0, 72, 72);
                     star.setPosition(step.getX() + mRandom.nextFloat(), step.getY() + Star.STAR_HEIGHT + mRandom.nextFloat() * 3);
                     mStars.add(star);
+                }
+
+                if (mRandom.nextFloat() > 0.9f) {
+                    Enemy enemy = new Enemy(type,enemyTexture,0,0,72,72);
+                    enemy.setPosition(enemy.getX() + mRandom.nextFloat(), enemy.getY() + enemy.ENEMY_HEIGHT + mRandom.nextFloat() * 3);
+                    mEnemy.add(enemy);
                 }
 
                 y += (maxJumpHeight - 0.5f);
@@ -261,6 +275,15 @@
             if (mPlayer.getBoundingRectangle().overlaps(mUfo.getBoundingRectangle())) {
                 mGameState = GAME_STATE_GAMEOVER;
                 return;
+            }
+
+            //Enemyとの当たり判定
+            for(int i = 0; i < mEnemy.size(); i++){
+                Enemy enemy = mEnemy.get(i);
+            if (mPlayer.getBoundingRectangle().overlaps(enemy.getBoundingRectangle())) {
+                mGameState = GAME_STATE_GAMEOVER;
+                return;
+            }
             }
 
             // Starとの当たり判定
