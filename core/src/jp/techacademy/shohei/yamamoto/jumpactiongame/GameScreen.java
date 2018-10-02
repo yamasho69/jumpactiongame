@@ -55,6 +55,7 @@
         int mScore;
         int mHighScore;
         Preferences mPrefs;
+        Sound mSound;
 
         public GameScreen(JumpActionGame game) {
             mGame = game;
@@ -87,6 +88,7 @@
             mFont.getData().setScale(0.8f);
             mScore = 0;
             mHighScore = 0;
+            mSound = Gdx.audio.newSound(Gdx.files.internal("powerdown.mp3"));
 
             // ハイスコアをPreferencesから取得する
             mPrefs = Gdx.app.getPreferences("jp.techacademy.taro.kirameki.jumpactiongame");
@@ -283,8 +285,7 @@
             for(int i = 0; i < mEnemy.size(); i++){
                 Enemy enemy = mEnemy.get(i);
             if (mPlayer.getBoundingRectangle().overlaps(enemy.getBoundingRectangle())) {
-                Sound sound = Gdx.audio.newSound(Gdx.files.internal("puyon1.mp3"));
-                sound.play(1.0f);
+                mSound.play(1.0f);
                 mGameState = GAME_STATE_GAMEOVER;
                 return;
             }
